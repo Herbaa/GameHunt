@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { games } from "../__fixtures__/games.js";
-import AddNewGame from "./addNewGame.jsx";
+import AddNewGame from "./AddNewGame.jsx";
 
 export default function App() {
   const [secretGame, setGame] = useState(null)
