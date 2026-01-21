@@ -3,12 +3,12 @@ import { games } from "../__fixtures__/games.js";
 import AddNewGame from "./AddNewGame.jsx";
 
 export default function App() {
-  const [secretGame, setGame] = useState(null)
-  const [enteredTitle, setEnteredTitle] = useState('')
-  const [enteredGame, setEnteredGame] = useState(null)
+  const [secretGame, setGame] = useState(null) // загаданная игра
+  const [enteredTitle, setEnteredTitle] = useState('') // Содержимое ввода в input 
+  const [enteredGame, setEnteredGame] = useState(null) // введеная игра (после enter)
 
   const normalize = (t) => {
-  return (t || "").trim().toLowerCase();
+    return (t || "").trim().toLowerCase();
   }
 
   useEffect(() => {
@@ -18,12 +18,13 @@ export default function App() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    const found = games.find((game) => normalize(game.title) === normalize(enteredTitle))
-    setEnteredGame(found || null)
+    const found = normalize(secretGame.title) === normalize(enteredTitle)
+    setEnteredGame(found ? secretGame : null)
     setEnteredTitle('')
   }
+  
   if(!secretGame) return null
-  // console.log(game.title)
+  console.log(secretGame.title)
 
   return (<>
     <div className="flex flex-col items-center gap-4 mt-10">
