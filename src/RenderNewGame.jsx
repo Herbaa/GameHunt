@@ -1,7 +1,7 @@
-export default function AddNewGame({game}) {
+export default function RenderNewGame({game}) {
     // console.log(game)
 
-    return <div className="max-w-3xl mx-auto grid grid-cols-4 gap-4 mt-10">
+    return <div className="max-w-3xl mx-auto grid grid-cols-4 gap-4 m-5 ml-5 mr-5">
         {/* <div><h3>{secretGame.title}</h3></div> */}
       
       <div className="flex flex-col items-center">

@@ -1,36 +1,34 @@
 import { useState, useEffect } from "react";
 import { games } from "../__fixtures__/games.js";
-import AddNewGame from "./AddNewGame.jsx";
-import confetti from "canvas-confetti";
+import RenderNewGame from "./RenderNewGame.jsx";
+import { normalize, win } from "./utils.jsx";
+import Tips from "./tips.jsx";
 
 export default function App() {
   const [secretGame, setGame] = useState(null) // загаданная игра
   const [inputText, setInputText] = useState('') // Содержимое ввода в input 
-  const [enteredGame, setEnteredGame] = useState(null) // введеная игра (после enter)
+  const [enteredGame, setEnteredGame] = useState(null) // введенная игра (после enter)
   const [resultOfGame, setResultOfGame] = useState(null) // статус игры
-
-  const normalize = (t) => {
-    return (t || "").trim().toLowerCase();
-  }
-
-  const win = () => {
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: {
-        y: 0.6
-      }
-    });
-  };
+  const [enterGames, setEnterGames] = useState([]) // все введенные игры 
+  const [mostMatchingGame, setMostMatchingGame] = useState(null); // самая совпадаемая игра
   // console.log('input - ', inputText)
   // console.log(enteredGame)
-  const statusMessage = (status) => {
+  const choseGame = () => {
+    useEffect(() => {
+      const gameIndex = Math.floor(Math.random() * games.length)
+      setGame(games[gameIndex])
+    }, [])
+  };
+
+  choseGame()
+
+  const renderResult = (status) => {
     switch (status) {
       case 'win':
         win()
         return <h5 className="text-center font-bold text-green-600">Победа!</h5>
       case 'retry':
-        return <h5 className="text-center font-bold text-amber-600">Попробуй еще раз!</h5>
+        return <h5 className="text-center font-bold text-amber-600">Попробуй еще раз!</h5> // возможно поменять текст
       case 'notFound':
         return <h5 className="text-center font-bold text-red-600">Игра не найдена</h5>
       default:
@@ -38,26 +36,26 @@ export default function App() {
     }
   }
 
-  useEffect(() => {
-    const gameIndex = Math.floor(Math.random() * games.length)
-    setGame(games[gameIndex])
-  }, [])
-
-  const renderNewGame = (game) => {
-    return enteredGame ? <AddNewGame game={game} /> : null
+  const renderGame = (game) => {
+    return enteredGame ? <RenderNewGame game={game} /> : null
   }
-
 
   const handleSubmit = (e) => {
     e.preventDefault()
-
     const isExist = games.find((game) => normalize(game.title) === normalize(inputText))
-    if (normalize(secretGame.title) === inputText) {
-        setEnteredGame(secretGame)
-        setInputText('')
-        setResultOfGame('win')
+    
+    if (normalize(secretGame.title) === normalize(inputText)) {
+      setEnteredGame(secretGame)
+      setEnterGames([...enterGames, isExist])
+      setMostMatchingGame(secretGame)
+      setInputText('')
+      setResultOfGame('win')
     } else if (isExist) {
       setEnteredGame(isExist)
+        if (!enterGames.includes(isExist)) {
+          setEnterGames([...enterGames, isExist])
+          setMostMatchingGame(isExist)
+        }
       setInputText('')
       setResultOfGame('retry')
     }  else {
@@ -67,7 +65,7 @@ export default function App() {
   }
 
   if(!secretGame) return null
-
+  // console.log(resultOfGame)
   return (<>
     <div className="flex flex-col items-center gap-4 mt-10">
       <h1 className="text-4xl font-bold text-indigo-400">GameHunt</h1>
@@ -77,52 +75,32 @@ export default function App() {
           <input
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
+            minLength={3}
+            maxLength={20}
             placeholder="Введите название игры..."
             className="w-full px-4 py-3 rounded-xl bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            disabled={resultOfGame === 'win'}
           />
-          {statusMessage(resultOfGame)}
+          {renderResult(resultOfGame)}
           <button
             id="submitButton"
             type="submit"
             className="cursor-pointer mt-4 w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 rounded-xl"
+            disabled={resultOfGame === 'win'}
           >
             Проверить
           </button>
         </form>
     </div>
-    
-    <div className="max-w-3xl mx-auto grid grid-cols-4 gap-4 mt-10">
-      
-      <div className="flex flex-col items-center">
-        <h3 className="text-lg font-bold mb-2">Год выпуска</h3>
-        <div className="w-full p-4 rounded-xl bg-gray-800 text-center flex items-center justify-center">
-          {secretGame.year}
-        </div>
-      </div>
-
-      <div className="flex flex-col items-center">
-        <h3 className="text-lg font-bold mb-2">Жанр игры</h3>
-        <div className="w-full p-4 rounded-xl bg-orange-500 text-white text-center flex items-center justify-center">
-          {secretGame.genres.join(', ')}
-        </div>
-      </div>
-
-      <div className="flex flex-col items-center">
-        <h3 className="text-lg font-bold mb-2">Платформа</h3>
-        <div className="w-full p-4 rounded-xl bg-green-600 text-white text-center flex items-center justify-center">
-          {secretGame.platforms.join(', ')}
-        </div>
-      </div>
-
-      <div className="flex flex-col items-center">
-        <h3 className="text-lg font-bold mb-2">Продажи</h3>
-        <div className="w-full p-4 rounded-xl bg-gray-800 text-center flex items-center justify-center">
-          {secretGame.sales}
-        </div>
-      </div>
-    </div>
+    <Tips secretGame={secretGame} />
     <br />
-    {renderNewGame(enteredGame)}
+    {enterGames.length > 0 ? <div className="border-5 border-gray-700 rounded-xl">
+      <div className="flex flex-col items-center">
+        <h3 className="text-lg font-bold mb-2">Больше всего совпадений:</h3>
+        {<RenderNewGame game={mostMatchingGame} />}
+      </div>
+    </div> : null}
+    {enterGames.length > 1 ? enterGames.map((game) => game !== mostMatchingGame ? <div className="border-5 border-gray-700 rounded-xl"><RenderNewGame game={game}/> </div> : null) : null}
     </>
   );
 }
