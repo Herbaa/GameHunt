@@ -11,8 +11,7 @@ export default function App() {
   const [resultOfGame, setResultOfGame] = useState(null) // статус игры
   const [enterGames, setEnterGames] = useState([]) // все введенные игры 
   const [mostMatchingGame, setMostMatchingGame] = useState(null); // самая совпадаемая игра
-  // console.log('input - ', inputText)
-  // console.log(enteredGame)
+  
   const choseGame = () => {
     useEffect(() => {
       const gameIndex = Math.floor(Math.random() * games.length)
@@ -69,7 +68,7 @@ export default function App() {
   return (<>
     <div className="flex flex-col items-center gap-4 mt-10">
       <h1 className="text-4xl font-bold text-indigo-400">GameHunt</h1>
-      <p className="text-gray-300">Попробуй угадать игру по подсказкам ниже!</p>
+      <p className="text-gray-300 text-center" >Попробуй угадать игру по подсказкам ниже!</p>
 
       <form onSubmit={handleSubmit} className="w-full max-w-md mt-6">
           <input
