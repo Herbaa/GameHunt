@@ -13,8 +13,8 @@ export default function Tips({secretGame}) {
     </span>
   </div>
 
-  <div className="rounded-xl p-4 bg-orange-500 flex flex-col items-center justify-center text-center">
-    <span className="text-s uppercase opacity-80 mb-1">
+  <div className="rounded-xl p-4 bg-gray-800 flex flex-col items-center justify-center text-center">
+    <span className="text-s uppercase tracking-wide text-gray-400 mb-1">
       Жанр
     </span>
     <span className="text-m font-semibold">
@@ -22,8 +22,8 @@ export default function Tips({secretGame}) {
     </span>
   </div>
 
-  <div className="rounded-xl p-4 bg-green-600 flex flex-col items-center justify-center text-center">
-    <span className="text-s uppercase opacity-80 mb-1">
+  <div className="rounded-xl p-4 bg-gray-800 flex flex-col items-center justify-center text-center">
+    <span className="text-s uppercase tracking-wide text-gray-400 mb-1">
       Платформа
     </span>
     <span className="text-m font-semibold">
@@ -32,7 +32,7 @@ export default function Tips({secretGame}) {
   </div>
 
   <div className="rounded-xl p-4 bg-gray-800 flex flex-col items-center justify-center text-center">
-    <span className="text-sm uppercase tracking-wide text-gray-400 mb-1">
+    <span className="text-s uppercase tracking-wide text-gray-400 mb-1">
       Кол-во продаж
     </span>
     <span className="text-lg font-semibold">
