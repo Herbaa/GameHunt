@@ -7,12 +7,14 @@ import GiveUpButton from "./GiveUpButton.jsx";
 
 const STORAGE_KEY = "gamehunt_state";
 
-const saveState = (secretGame, enterGames, statusOfGame) => {
+const saveState = (secretGame, enterGames, statusOfGame, difficulty, selectedTips) => {
   try {
     const state = {
       secretGameId: secretGame.id,
       enterGameIds: enterGames.map((entry) => entry.game.id),
-      statusOfGame
+      statusOfGame,
+      difficulty,
+      selectedTips 
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
   } catch {}
@@ -22,7 +24,7 @@ const loadState = () => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
-    const { secretGameId, enterGameIds, statusOfGame } = JSON.parse(raw)
+    const { secretGameId, enterGameIds, statusOfGame, difficulty, selectedTips } = JSON.parse(raw)
 
     const secretGame = games.find((game) => game.id === secretGameId)
     if (!secretGame) return null
@@ -37,22 +39,40 @@ const loadState = () => {
       })
       .filter(Boolean)
 
-    return { secretGame, enterGames, statusOfGame }
+    return { secretGame, enterGames, statusOfGame, difficulty, selectedTips: selectedTips ?? [] }
   } catch {
     return null
   }
 };
 
+const difficulties = [
+  { key: 'easy', label: 'Легкая', activeClass: 'bg-green-600 hover:bg-green-700', inactiveClass: 'bg-gray-700 hover:bg-gray-600' },
+  { key: 'medium', label: 'Средняя', activeClass: 'bg-orange-500 hover:bg-orange-600', inactiveClass: 'bg-gray-700 hover:bg-gray-600' },
+  { key: 'hard', label: 'Сложная', activeClass: 'bg-red-500 hover:bg-red-600', inactiveClass: 'bg-gray-700 hover:bg-gray-600' },
+]
+
 const clearState = () => localStorage.removeItem(STORAGE_KEY)
 
 export default function App() {
-  const saved = loadState() // состояние из localstorage
+  const [saved] = useState(() => loadState()) // состояние из localstorage
 
   // загаданная игра
   const [secretGame, setGame] = useState(saved?.secretGame ?? (() => games[Math.floor(Math.random() * games.length)]))
   const [inputText, setInputText] = useState("") // текст в инпуте
   const [statusOfGame, setStatusOfGame] = useState(saved?.statusOfGame ?? null) // статус игры
   const [enterGames, setEnterGames] = useState(saved?.enterGames ?? []) // все введенные игры
+  const [difficulty, setDifficulty] = useState(saved?.difficulty ?? 'easy') // сложность игры
+
+  const [selectedTips, setSelectedTips] = useState(saved?.selectedTips ?? []) // какие подсказки открыл пользователь (ср уровень)
+
+  useEffect(() => {
+    if (secretGame) {
+      saveState(secretGame, enterGames, statusOfGame, difficulty, selectedTips);
+    }
+    // console.log(`Game: ${enterGames[enterGames.length - 1]?.game.title}\nScore: ${enterGames[enterGames.length - 1]?.score}`)
+  }, [secretGame, enterGames, statusOfGame, difficulty, selectedTips]);
+
+  const isInputBlocked = difficulty === 'medium' && selectedTips.length !== 2
 
   const mostMatchingGame = enterGames.length > 0
  ? enterGames.reduce((best, entry) => entry.score > best.score ? entry : best)
@@ -63,13 +83,6 @@ export default function App() {
     .filter((entry) => entry.game.id !== mostMatchingGame?.game.id)
     .sort((a, b) => b.score - a.score);
 
-  useEffect(() => {
-    if (secretGame) {
-      saveState(secretGame, enterGames, statusOfGame);
-    }
-    console.log(`Game: ${enterGames[enterGames.length - 1]?.game.title}\nScore: ${enterGames[enterGames.length - 1]?.score}`)
-  }, [secretGame, enterGames, statusOfGame]);
-
   const choseGame = () => {
     clearState()
     const gameIndex = Math.floor(Math.random() * games.length)
@@ -77,6 +90,19 @@ export default function App() {
     setInputText("")
     setStatusOfGame(null)
     setEnterGames([])
+    setSelectedTips([])
+  }
+
+  const handleDifficulty = (key) => {
+    if (key === difficulty) return
+    setDifficulty(key)
+    choseGame()
+  }
+
+  const handleSelectTip = (tipKey) => {
+    if(selectedTips.length === 2) return
+    if (selectedTips.includes(tipKey)) return
+    return setSelectedTips((prev) => [...prev, tipKey])
   }
 
   const renderResult = (status) => {
@@ -123,7 +149,20 @@ export default function App() {
   if (!secretGame) return null;
   return (    
     <>
-      <GiveUpButton onConfirm={choseGame} />
+
+     <div className="w-full flex justify-center gap-3 pt-4">
+        {difficulties.map(({ key, label, activeClass, inactiveClass }) => (
+          <button
+            key={key}
+            onClick={() => handleDifficulty(key)}
+            className={`cursor-pointer font-bold py-2 px-4 rounded-lg text-white transition ${difficulty === key ? activeClass : inactiveClass}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      
+      {enterGames.length > 0 && <GiveUpButton onConfirm={choseGame} />}
       <div className="flex flex-col items-center gap-4 mt-10">
         <h1 className="text-4xl font-bold text-indigo-400">GameHunt</h1>
         <p className="text-gray-300 text-center">Попробуй угадать игру по подсказкам ниже!</p>
@@ -136,26 +175,31 @@ export default function App() {
             maxLength={40}
             placeholder="Введите название игры..."
             className="w-full px-4 py-3 rounded-xl bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            disabled={statusOfGame === "win"}
+            disabled={statusOfGame === "win" || isInputBlocked}
           />
           {renderResult(statusOfGame)}
           <button
             type="submit"
             className="cursor-pointer mt-4 w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 rounded-xl"
-            disabled={statusOfGame === "win"}
+            disabled={statusOfGame === "win" || isInputBlocked}
           >
             Проверить
           </button>
         </form>
       </div>
 
-      <Tips secretGame={secretGame} />
+      <Tips 
+        secretGame={secretGame} 
+        difficulty={difficulty} 
+        selectedTips={selectedTips} 
+        onSelectTip={handleSelectTip}/>
       <br /> 
 
       {mostMatchingGame?.game && (
         <div className="mt-5 border-5 border-indigo-500 rounded-xl">
           <div className="flex flex-col items-center">
             <h3 className="text-lg font-bold mb-2">Больше всего совпадений:</h3>
+            <h5 className="text-lg font-semibold mt-2">{mostMatchingGame.game.title}</h5>
             <RenderNewGame game={mostMatchingGame.game} comparison={mostMatchingGame.comparison}/>
           </div>
         </div>
@@ -163,7 +207,10 @@ export default function App() {
 
       {sortedOtherGames.map((entry) => (
         <div key={entry.game.id} className="mt-5 border-3 border-gray-700 rounded-xl">
+          <div className="flex flex-col items-center">
+            <h5 className="text-lg font-semibold mt-2">{entry.game.title}</h5>
           <RenderNewGame game={entry.game} comparison={entry.comparison}/>
+        </div>
         </div>
       ))}
     </>

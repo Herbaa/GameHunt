@@ -8,7 +8,7 @@ export default function GiveUpButton({ onConfirm }) {
     <button 
     onClick={() => setIsDialogOpen(true)} 
     className="cursor-pointer bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">
-      Сдаться 
+      Сброс игры 
     </button>
   {isDialogOpen && (
   <div
@@ -20,11 +20,11 @@ export default function GiveUpButton({ onConfirm }) {
       onClick={(e) => e.stopPropagation()}
     >
       <h2 className="text-xl text-black font-bold mb-4 text-center">
-        Сдаться?
+        Сбросить игру?
       </h2>
 
       <p className="mb-6 text-black text-center">
-        Вы уверены, что хотите сбросить игру?
+        Вы уверены, что хотите закончить игру? 
       </p>
 
       <div className="flex justify-between gap-4">
@@ -42,7 +42,7 @@ export default function GiveUpButton({ onConfirm }) {
             onConfirm()
           }}
         >
-          Сдаться
+          Сброс
         </button>
       </div>
     </div>

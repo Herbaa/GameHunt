@@ -57,3 +57,15 @@ export const calcScore = (comparison) => {
   const colorPoints = {gray: 0, orange: 1, green: 2}
   return Object.values(comparison).reduce((sum, color) => sum + colorPoints[color], 0)
 }
+
+// export const colorRank = {gray: 0, orange: 1, green: 2}
+
+// export const mergeTipColors = (prevColors, newComparison) => {  // сравнение текущего obj с цветами подсказок и нового obj из mostMatchingGame
+//   const newColors = { ...prevColors }
+//   for (const key in newComparison) {
+//     if (colorRank[newComparison[key]] > colorRank[prevColors[key]]) {
+//       newColors[key] = newComparison[key]
+//     }
+//   }
+//   return newColors
+// }

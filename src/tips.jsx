@@ -1,44 +1,64 @@
 import { normalizeSales } from "./utils"
 
-export default function Tips({secretGame}) {
+const tip_keys = ['year', 'genres', 'platforms', 'sales']
 
-  return <div id="tips" className="max-w-3xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-10">
-    
-  <div className="rounded-xl p-4 bg-gray-800 flex flex-col items-center justify-center text-center">
-    <span className="text-s uppercase tracking-wide text-gray-400 mb-1">
-      Год выпуска
-    </span>
-    <span className="text-lg font-semibold">
-      {secretGame.year}
-    </span>
-  </div>
+export default function Tips({secretGame, difficulty, selectedTips, onSelectTip}) {
 
-  <div className="rounded-xl p-4 bg-gray-800 flex flex-col items-center justify-center text-center">
-    <span className="text-s uppercase tracking-wide text-gray-400 mb-1">
-      Жанр
-    </span>
-    <span className="text-m font-semibold">
-      {secretGame.genres.join(', ')}
-    </span>
-  </div>
+  const getValue = (key) => {
+    switch (key) {
+      case 'year': return secretGame.year
+      case 'genres': return secretGame.genres.join(', ')
+      case 'platforms': return secretGame.platforms.join(', ')
+      case 'sales': return normalizeSales(secretGame.sales)
+    }
+  }
 
-  <div className="rounded-xl p-4 bg-gray-800 flex flex-col items-center justify-center text-center">
-    <span className="text-s uppercase tracking-wide text-gray-400 mb-1">
-      Платформа
-    </span>
-    <span className="text-m font-semibold">
-      {secretGame.platforms.join(', ')}
-    </span>
-  </div>
+  const getLabel = (key) => {
+    switch (key) {
+      case 'year': return 'Год выпуска'
+      case 'genres': return 'Жанр'
+      case 'platforms': return 'Платформа'
+      case 'sales': return 'Кол-во продаж'
+    }
+  }
 
-  <div className="rounded-xl p-4 bg-gray-800 flex flex-col items-center justify-center text-center">
-    <span className="text-s uppercase tracking-wide text-gray-400 mb-1">
-      Кол-во продаж
-    </span>
-    <span className="text-lg font-semibold">
-      {normalizeSales(secretGame.sales)}
-    </span>
-  </div>
+  const isSelected = (key) => {
+    if (difficulty === 'easy') return true
+    if (difficulty === 'medium') return selectedTips.includes(key)
+    if (difficulty === 'hard') return false
+  }
 
-  </div>
+  // кликабельно только на ср уровне, если еще не выбран и не набрано 2
+  const isClickable = (key) => {
+    return difficulty === 'medium' && !selectedTips.includes(key) && selectedTips.length !== 2
+  }
+
+  // const setClassname = (color) => {
+  //     switch (color) {
+  //       case 'orange': return 'bg-orange-500'
+  //       case 'green': return 'bg-green-600'
+  //       default: return 'bg-gray-800'
+  //     }
+  //   }
+
+  return (
+    <div id="tips" className="max-w-3xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-10">
+      {tip_keys.map((key) => (
+        <div
+          key={key}
+          onClick={() => isClickable(key) && onSelectTip(key)}
+          className={`rounded-xl p-4 bg-gray-800 flex flex-col items-center justify-center text-center
+            ${isClickable(key) ? 'cursor-pointer hover:bg-gray-600 border-2 border-dashed border-gray-500' : ''}
+          `}
+        >
+          <span className="text-s uppercase tracking-wide text-gray-400 mb-1">
+            {getLabel(key)}
+          </span>
+          <span className="text-lg font-semibold">
+            {isSelected(key) ? getValue(key) : '* * *'} 
+          </span>
+        </div>
+      ))}
+    </div>
+  )
 }
