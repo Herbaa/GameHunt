@@ -41,8 +41,11 @@ export default function Tips({secretGame, difficulty, selectedTips, onSelectTip}
   //     }
   //   }
 
-  return (
-    <div id="tips" className="max-w-3xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-10">
+  return (<>
+  {selectedTips.length !== 2 && difficulty === 'medium' && <div className="flex flex-col items-center mt-5">
+    <span className="font-semibold text-center">Перед началом игры нажмите на две подсказки, которые хотите открыть</span>
+  </div>}
+  <div id="tips" className="max-w-3xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-10">
       {tip_keys.map((key) => (
         <div
           key={key}
@@ -60,5 +63,6 @@ export default function Tips({secretGame, difficulty, selectedTips, onSelectTip}
         </div>
       ))}
     </div>
+    </>
   )
 }

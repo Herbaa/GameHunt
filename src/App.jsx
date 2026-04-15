@@ -3,7 +3,9 @@ import { games } from "../__fixtures__/games.js";
 import RenderNewGame from "./RenderNewGame.jsx";
 import { compareGames, normalize, win, calcScore } from "./utils.jsx";
 import Tips from "./tips.jsx";
-import GiveUpButton from "./GiveUpButton.jsx";
+import ConfirmDialog from "./ConfirmDialog.jsx";
+import InfoIcon from "./assets/info.svg?react"
+import InfoDialog from "./InfoDialog.jsx";
 
 const STORAGE_KEY = "gamehunt_state";
 
@@ -53,6 +55,8 @@ const difficulties = [
 
 const clearState = () => localStorage.removeItem(STORAGE_KEY)
 
+// -------------------------------------------------------------------------------------------------------------------------
+
 export default function App() {
   const [saved] = useState(() => loadState()) // состояние из localstorage
 
@@ -62,6 +66,8 @@ export default function App() {
   const [statusOfGame, setStatusOfGame] = useState(saved?.statusOfGame ?? null) // статус игры
   const [enterGames, setEnterGames] = useState(saved?.enterGames ?? []) // все введенные игры
   const [difficulty, setDifficulty] = useState(saved?.difficulty ?? 'easy') // сложность игры
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
+  const [isInfoOpen, setIsInfoOpen] = useState(false)
 
   const [selectedTips, setSelectedTips] = useState(saved?.selectedTips ?? []) // какие подсказки открыл пользователь (ср уровень)
 
@@ -150,7 +156,18 @@ export default function App() {
   return (    
     <>
 
-     <div className="w-full flex justify-center gap-3 pt-4">
+     <div className="relative flex justify-center items-center pt-4 px-4">
+        {enterGames.length > 0 && (
+          <button
+            onClick={() => setIsResetDialogOpen(true)}
+            className="absolute left-4 cursor-pointer bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg"
+          >
+            Сброс игры
+          </button>
+        )}
+
+
+      <div className="flex gap-3">
         {difficulties.map(({ key, label, activeClass, inactiveClass }) => (
           <button
             key={key}
@@ -162,7 +179,22 @@ export default function App() {
         ))}
       </div>
       
-      {enterGames.length > 0 && <GiveUpButton onConfirm={choseGame} />}
+      <button
+        onClick={() => setIsInfoOpen(true)}
+        className="absolute right-4 cursor-pointer text-gray-400 hover:text-white transition"
+      >
+      <InfoIcon width={32} height={32} />
+    </button>
+
+    </div>
+    <ConfirmDialog
+      isOpen={isResetDialogOpen}
+      onClose={() => setIsResetDialogOpen(false)}
+      onConfirm={choseGame}
+      title="Сбросить игру?"
+      description="Вы уверены, что хотите закончить игру?"
+    />
+      
       <div className="flex flex-col items-center gap-4 mt-10">
         <h1 className="text-4xl font-bold text-indigo-400">GameHunt</h1>
         <p className="text-gray-300 text-center">Попробуй угадать игру по подсказкам ниже!</p>
@@ -213,6 +245,7 @@ export default function App() {
         </div>
         </div>
       ))}
+      <InfoDialog isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} />
     </>
   );
 }
