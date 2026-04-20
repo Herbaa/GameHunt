@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { games } from "../__fixtures__/games.js";
+import { supabase } from "./supabase.js";
 import RenderNewGame from "./RenderNewGame.jsx";
 import { compareGames, normalize, win, calcScore } from "./utils.jsx";
 import Tips from "./tips.jsx";
@@ -26,22 +26,7 @@ const loadState = () => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
-    const { secretGameId, enterGameIds, statusOfGame, difficulty, selectedTips } = JSON.parse(raw)
-
-    const secretGame = games.find((game) => game.id === secretGameId)
-    if (!secretGame) return null
-
-    const enterGames = enterGameIds
-      .map((id) => {
-        const game = games.find((game) => game.id === id)
-        if (!game) return null
-        const comparison = compareGames(game, secretGame)
-        const score = calcScore(comparison)
-        return { game, comparison, score }
-      })
-      .filter(Boolean)
-
-    return { secretGame, enterGames, statusOfGame, difficulty, selectedTips: selectedTips ?? [] }
+    return JSON.parse(raw)
   } catch {
     return null
   }
@@ -58,25 +43,70 @@ const clearState = () => localStorage.removeItem(STORAGE_KEY)
 // -------------------------------------------------------------------------------------------------------------------------
 
 export default function App() {
-  const [saved] = useState(() => loadState()) // состояние из localstorage
 
   // загаданная игра
-  const [secretGame, setGame] = useState(saved?.secretGame ?? (() => games[Math.floor(Math.random() * games.length)]))
+  const [secretGame, setSecretGame] = useState(null)
   const [inputText, setInputText] = useState("") // текст в инпуте
-  const [statusOfGame, setStatusOfGame] = useState(saved?.statusOfGame ?? null) // статус игры
-  const [enterGames, setEnterGames] = useState(saved?.enterGames ?? []) // все введенные игры
-  const [difficulty, setDifficulty] = useState(saved?.difficulty ?? 'easy') // сложность игры
+  const [statusOfGame, setStatusOfGame] = useState(null) // статус игры
+  const [enterGames, setEnterGames] = useState([]) // все введенные игры
+  const [difficulty, setDifficulty] = useState('easy') // сложность игры
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [isInfoOpen, setIsInfoOpen] = useState(false)
+  const [games, setGames] = useState([]) // все игры из бд
+  const [isLoading, setIsLoading] = useState(true) // загрузка игр из бд
 
-  const [selectedTips, setSelectedTips] = useState(saved?.selectedTips ?? []) // какие подсказки открыл пользователь (ср уровень)
+  const [selectedTips, setSelectedTips] = useState([]) // какие подсказки открыл пользователь (ср уровень)
+
+  useEffect(() => { // загрузка игр из supabase
+    const fetchGames = async () => {
+      const {data, error} = await supabase.from('games').select('*')
+      if (error) {
+        console.error('Ошибка загрузки игр: ', error);
+        return
+      }
+      setGames(data)
+      setIsLoading(false)
+    }
+    fetchGames()
+  }, [])
+
+  const [isRestored, setIsRestored] = useState(false) // восстановлено ли состояние
+  
+  useEffect(() => { // восстановление состояния из localstorage
+    if (games.length === 0 || isRestored) return
+
+    const saved = loadState()
+    if (saved) {
+      const secretGame = games.find((game) => game.id === saved.secretGameId)
+
+      if (secretGame) {
+        setSecretGame(secretGame)
+
+        const enterGames = (saved.enterGameIds ?? []).map((id) => {
+          const game = games.find((gm) => gm.id === id)
+          if (!game) return null
+          const comparison = compareGames(game, secretGame)
+          const score = calcScore(comparison)
+          return {game, comparison, score}
+        })
+        .filter(Boolean)
+
+        setEnterGames(enterGames)
+        setStatusOfGame(saved.statusOfGame ?? null)
+        setDifficulty(saved.difficulty ?? 'easy')
+        setSelectedTips(saved.selectedTips ?? [])
+      }
+    } else { // если нет сохраненного состояние 
+      setSecretGame(games[Math.floor(Math.random() * games.length)])
+    }
+    setIsRestored(true)
+  }, [games])
 
   useEffect(() => {
-    if (secretGame) {
-      saveState(secretGame, enterGames, statusOfGame, difficulty, selectedTips);
+    if (secretGame && isRestored) {
+      saveState(secretGame, enterGames, statusOfGame, difficulty, selectedTips)
     }
-    // console.log(`Game: ${enterGames[enterGames.length - 1]?.game.title}\nScore: ${enterGames[enterGames.length - 1]?.score}`)
-  }, [secretGame, enterGames, statusOfGame, difficulty, selectedTips]);
+  }, [secretGame, enterGames, statusOfGame, difficulty, selectedTips])
 
   const isInputBlocked = difficulty === 'medium' && selectedTips.length !== 2
 
@@ -91,8 +121,7 @@ export default function App() {
 
   const choseGame = () => {
     clearState()
-    const gameIndex = Math.floor(Math.random() * games.length)
-    setGame(games[gameIndex])
+    setSecretGame(games[Math.floor(Math.random() * games.length)])
     setInputText("")
     setStatusOfGame(null)
     setEnterGames([])
@@ -126,14 +155,19 @@ export default function App() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const isExist = games.find((game) => normalize(game.title) === normalize(inputText));
+    const isExist = games.find((game) => {
+      return normalize(game.title) === normalize(inputText) ||
+      (game.aliases ?? []).some((alias) => normalize(alias) === normalize(inputText))
+    })
       
     if (!isExist) {
       setStatusOfGame('notFound')
       return
     }
+    const isSecretGame = normalize(secretGame.title) === normalize(inputText) ||
+      (secretGame.aliases ?? []).some((alias) => normalize(alias) === normalize(inputText))
     
-    if (normalize(secretGame.title) === normalize(inputText)) {
+    if (isSecretGame) {
       win()
       const comparison = compareGames(isExist, secretGame)
       const score = calcScore(comparison)
@@ -152,15 +186,20 @@ export default function App() {
     }
   };
   
-  if (!secretGame) return null;
+  if (isLoading || !isRestored) return (
+    <div className="flex justify-center items-center h-screen text-gray-400">
+      Загрузка...
+    </div>
+  ) 
+
   return (    
     <>
 
-     <div className="relative flex justify-center items-center pt-4 px-4">
+     <div className="relative flex flex-wrap relative justify-center gap-3 items-center pt-4 px-4">
         {enterGames.length > 0 && (
           <button
             onClick={() => setIsResetDialogOpen(true)}
-            className="absolute left-4 cursor-pointer bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg"
+            className="md:absolute md:left-4 cursor-pointer bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg"
           >
             Сброс игры
           </button>
@@ -181,7 +220,7 @@ export default function App() {
       
       <button
         onClick={() => setIsInfoOpen(true)}
-        className="absolute right-4 cursor-pointer text-gray-400 hover:text-white transition"
+        className="md:absolute md:right-4 cursor-pointer text-gray-400 hover:text-white transition"
       >
       <InfoIcon width={32} height={32} />
     </button>
