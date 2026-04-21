@@ -51,7 +51,7 @@ export default function Tips({secretGame, difficulty, selectedTips, onSelectTip}
           key={key}
           onClick={() => isClickable(key) && onSelectTip(key)}
           className={`rounded-xl p-4 bg-gray-800 flex flex-col items-center justify-center text-center
-            ${isClickable(key) ? 'cursor-pointer hover:bg-gray-600 border-2 border-dashed border-gray-500' : ''}
+            ${isClickable(key) ? 'cursor-pointer hover:bg-gray-600 border-2 border-dashed border-gray-500 transition' : ''}
           `}
         >
           <span className="text-s uppercase tracking-wide text-gray-400 mb-1">

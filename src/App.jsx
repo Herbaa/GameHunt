@@ -54,6 +54,7 @@ export default function App() {
   const [isInfoOpen, setIsInfoOpen] = useState(false)
   const [games, setGames] = useState([]) // все игры из бд
   const [isLoading, setIsLoading] = useState(true) // загрузка игр из бд
+  const [isFocused, setIsFocused] = useState(false) // фокус на инпуте
 
   const [selectedTips, setSelectedTips] = useState([]) // какие подсказки открыл пользователь (ср уровень)
 
@@ -185,6 +186,11 @@ export default function App() {
       setStatusOfGame("retry")
     }
   };
+
+  const inputListGames = isFocused && inputText.trim().length > 0 ? games.filter((game) => { // выпадающий список 
+    return normalize(game.title).includes(normalize(inputText)) ||
+    (game.aliases ?? []).some((alias) => normalize(alias).includes(normalize(inputText)))
+  }).slice(0, 5) : []
   
   if (isLoading || !isRestored) return (
     <div className="flex justify-center items-center h-screen text-gray-400">
@@ -195,11 +201,11 @@ export default function App() {
   return (    
     <>
 
-     <div className="relative flex flex-wrap relative justify-center gap-3 items-center pt-4 px-4">
+     <div className="relative flex flex-wrap justify-center gap-3 items-center pt-4 px-4">
         {enterGames.length > 0 && (
           <button
             onClick={() => setIsResetDialogOpen(true)}
-            className="md:absolute md:left-4 cursor-pointer bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg"
+            className="md:absolute md:left-4 cursor-pointer bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition"
           >
             Сброс игры
           </button>
@@ -239,19 +245,38 @@ export default function App() {
         <p className="text-gray-300 text-center">Попробуй угадать игру по подсказкам ниже!</p>
 
         <form onSubmit={handleSubmit} className="w-full max-w-md mt-6">
+          <div className="relative">
           <input
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             minLength={3}
             maxLength={40}
             placeholder="Введите название игры..."
             className="w-full px-4 py-3 rounded-xl bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             disabled={statusOfGame === "win" || isInputBlocked}
           />
+
+          {inputListGames.length > 0 && (
+            <ul className="absolute z-100 w-full mt-1 bg-gray-800 border border-gray-700  rounded-xl overflow-hidden">
+            {inputListGames.map((game) => (
+              <li className="px-4 py-2 cursor-pointer hover:bg-gray-700 transition"
+                key={game.id}
+                onMouseDown={() => {
+                  setInputText(game.title)
+                  setIsFocused(false)
+                }}>
+                {game.title}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
           {renderResult(statusOfGame)}
           <button
             type="submit"
-            className="cursor-pointer mt-4 w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 rounded-xl"
+            className="cursor-pointer mt-4 w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 rounded-xl transition"
             disabled={statusOfGame === "win" || isInputBlocked}
           >
             Проверить
