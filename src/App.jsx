@@ -6,6 +6,7 @@ import Tips from "./tips.jsx";
 import ConfirmDialog from "./ConfirmDialog.jsx";
 import InfoIcon from "./assets/info.svg?react"
 import InfoDialog from "./InfoDialog.jsx";
+import WinDialog from "./WinDialog.jsx";
 
 const STORAGE_KEY = "gamehunt_state";
 
@@ -238,6 +239,14 @@ export default function App() {
       onConfirm={choseGame}
       title="Сбросить игру?"
       description="Вы уверены, что хотите закончить игру?"
+    />
+
+    <WinDialog 
+      isOpen={statusOfGame === 'win'}
+      onConfirm={choseGame}
+      enterGames={enterGames}
+      secretGame={secretGame}
+      difficulty={difficulty}
     />
       
       <div className="flex flex-col items-center gap-4 mt-10">
