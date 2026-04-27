@@ -56,6 +56,7 @@ export default function App() {
   const [games, setGames] = useState([]) // все игры из бд
   const [isLoading, setIsLoading] = useState(true) // загрузка игр из бд
   const [isFocused, setIsFocused] = useState(false) // фокус на инпуте
+  const [chosenDifficulty, setChosenDifficulty] = useState(null)// сложность, которую хочет выбрать юзер
 
   const [selectedTips, setSelectedTips] = useState([]) // какие подсказки открыл пользователь (ср уровень)
 
@@ -132,8 +133,12 @@ export default function App() {
 
   const handleDifficulty = (key) => {
     if (key === difficulty) return
-    setDifficulty(key)
-    choseGame()
+    if (enterGames.length > 0) {
+      setChosenDifficulty(key)
+    } else {
+      setDifficulty(key)
+      choseGame()
+    }
   }
 
   const handleSelectTip = (tipKey) => {
@@ -239,6 +244,18 @@ export default function App() {
       onConfirm={choseGame}
       title="Сбросить игру?"
       description="Вы уверены, что хотите закончить игру?"
+    />
+    
+    <ConfirmDialog
+      isOpen={chosenDifficulty !== null}
+      onClose={() => setChosenDifficulty(null)}
+      onConfirm={() => {
+        setDifficulty(chosenDifficulty)
+        choseGame()
+        setChosenDifficulty(null)
+      }}
+      title="Сменить сложность?"
+      description="Текущий прогресс не сохранится"
     />
 
     <WinDialog 
