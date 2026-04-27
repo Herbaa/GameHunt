@@ -3,10 +3,10 @@ export default function InfoDialog({ isOpen, onClose }) {
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 z-40" 
+      <div className="animate-fadeIn fixed inset-0 bg-black/50 z-40" 
         onClick={onClose}/>
 
-      <div className="fixed top-0 right-0 h-full w-100 max-w-[75%] bg-gray-900 border-l border-gray-700 z-50 flex flex-col">
+      <div className="animate-slideInRight fixed top-0 right-0 h-full w-100 max-w-[75%] bg-gray-900 border-l border-gray-700 z-50 flex flex-col">
     
         <div className="flex justify-between items-center p-5 border-b border-gray-700">
           <h2 className="text-xl font-bold text-indigo-400">GameHunt</h2>

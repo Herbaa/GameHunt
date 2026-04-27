@@ -285,7 +285,7 @@ export default function App() {
           />
 
           {inputListGames.length > 0 && (
-            <ul className="absolute z-100 w-full mt-1 bg-gray-800 border border-gray-700  rounded-xl overflow-hidden">
+            <ul className="animate-fadeIn absolute z-100 w-full mt-1 bg-gray-800 border border-gray-700  rounded-xl overflow-hidden">
             {inputListGames.map((game) => (
               <li className="px-4 py-2 cursor-pointer hover:bg-gray-700 transition"
                 key={game.id}
@@ -318,7 +318,7 @@ export default function App() {
       <br /> 
 
       {mostMatchingGame?.game && (
-        <div className="mt-5 border-5 border-indigo-500 rounded-xl">
+        <div className="animate-fadeIn mt-5 border-5 border-indigo-500 rounded-xl">
           <div className="flex flex-col items-center">
             <h3 className="text-lg font-bold mb-2">Больше всего совпадений:</h3>
             <h5 className="text-lg font-semibold mt-2">{mostMatchingGame.game.title}</h5>
@@ -328,7 +328,7 @@ export default function App() {
       )}
 
       {sortedOtherGames.map((entry) => (
-        <div key={entry.game.id} className="mt-5 border-3 border-gray-700 rounded-xl">
+        <div key={entry.game.id} className="animate-fadeIn mt-5 border-3 border-gray-700 rounded-xl">
           <div className="flex flex-col items-center">
             <h5 className="text-lg font-semibold mt-2">{entry.game.title}</h5>
           <RenderNewGame game={entry.game} comparison={entry.comparison}/>

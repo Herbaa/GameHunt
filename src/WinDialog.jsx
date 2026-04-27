@@ -9,7 +9,7 @@ export default function WinDialog({ isOpen, onConfirm, enterGames, secretGame, d
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50">
       <div
-        className="bg-gray-900 border border-gray-700 p-8 rounded-2xl shadow-2xl w-full max-w-md mx-4 flex flex-col gap-6"
+        className="animate-popIn bg-gray-900 border border-gray-700 p-8 rounded-2xl shadow-2xl w-full max-w-md mx-4 flex flex-col gap-6"
         onClick={(e) => e.stopPropagation()}>
 
         <div className="flex flex-col items-center gap-2">
