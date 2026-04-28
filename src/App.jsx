@@ -131,7 +131,7 @@ export default function App() {
     setStatusOfGame(null)
     setEnterGames([])
     setSelectedTips([])
-    console.log(secretGame)
+    // console.log(secretGame)
   }
 
   const handleDifficulty = (key) => {
