@@ -7,6 +7,7 @@ import ConfirmDialog from "./ConfirmDialog.jsx";
 import InfoIcon from "./assets/info.svg?react"
 import InfoDialog from "./InfoDialog.jsx";
 import WinDialog from "./WinDialog.jsx";
+import LoseDialog from "./LoseDialog.jsx";
 
 const STORAGE_KEY = "gamehunt_state";
 
@@ -53,6 +54,7 @@ export default function App() {
   const [difficulty, setDifficulty] = useState('easy') // сложность игры
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [isInfoOpen, setIsInfoOpen] = useState(false)
+  const [isLoseDialogOpen, setIsLoseDialogOpen] = useState(false)
   const [games, setGames] = useState([]) // все игры из бд
   const [isLoading, setIsLoading] = useState(true) // загрузка игр из бд
   const [isFocused, setIsFocused] = useState(false) // фокус на инпуте
@@ -129,6 +131,7 @@ export default function App() {
     setStatusOfGame(null)
     setEnterGames([])
     setSelectedTips([])
+    console.log(secretGame)
   }
 
   const handleDifficulty = (key) => {
@@ -238,10 +241,14 @@ export default function App() {
     </button>
 
     </div>
+
     <ConfirmDialog
       isOpen={isResetDialogOpen}
       onClose={() => setIsResetDialogOpen(false)}
-      onConfirm={choseGame}
+      onConfirm={() => {
+        setIsResetDialogOpen(false)
+        setIsLoseDialogOpen(true)
+      }}
       title="Сбросить игру?"
       description="Вы уверены, что хотите закончить игру?"
     />
@@ -264,6 +271,17 @@ export default function App() {
       enterGames={enterGames}
       secretGame={secretGame}
       difficulty={difficulty}
+    />
+
+    <LoseDialog
+    isOpen={isLoseDialogOpen}
+    onConfirm={() => {
+      setIsLoseDialogOpen(false)
+      choseGame()
+    }}
+    enterGames={enterGames}
+    secretGame={secretGame}
+    difficulty={difficulty}
     />
       
       <div className="flex flex-col items-center gap-4 mt-10">

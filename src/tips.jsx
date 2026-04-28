@@ -18,7 +18,7 @@ export default function Tips({secretGame, difficulty, selectedTips, onSelectTip}
       case 'year': return 'Год выпуска'
       case 'genres': return 'Жанр'
       case 'platforms': return 'Платформа'
-      case 'sales': return 'Кол-во продаж'
+      case 'sales': return 'Кол-во продаж/ скачиваний'
     }
   }
 
