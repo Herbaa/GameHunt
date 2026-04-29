@@ -55,6 +55,36 @@ export const calcScore = (comparison) => {
   return Object.values(comparison).reduce((sum, color) => sum + colorPoints[color], 0)
 }
 
+export const renderResult = (status) => {
+  switch (status) {
+    case "win":
+      return <h5 className="text-center font-bold text-green-600">Победа!</h5>
+    case "retry":
+      return <h5 className="text-center font-bold text-amber-600">Попробуй еще раз!</h5>
+    case "notFound":
+      return <h5 className="text-center font-bold text-red-600">Игра не найдена</h5>
+    default:
+      return null
+  }
+};
+
+export const hideSecretGame = (secretGame) => {
+  const chars = Array.from(secretGame)
+  const filteredChars = chars.map((char, i) => char !== ' ' ? i : null)
+    .filter((i) => i !== null)
+
+  const countOfChars = Math.max(1, Math.round(filteredChars.length / 5)) // кол-во открытых букв
+
+  const mixed = [...filteredChars].sort(() => Math.random() - 0.5)
+  const indOfChar = new Set(mixed.slice(0, countOfChars)) // индексы открытых букв
+
+  return chars.map((char, i) => {
+    if (char === ' ') return ' '
+    if (indOfChar.has(i)) return char
+    return '*'
+  })
+  .join('')
+}
 // export const colorRank = {gray: 0, orange: 1, green: 2}
 
 // export const mergeTipColors = (prevColors, newComparison) => {  // сравнение текущего obj с цветами подсказок и нового obj из mostMatchingGame

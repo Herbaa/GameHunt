@@ -1,24 +1,27 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./supabase.js";
 import RenderNewGame from "./RenderNewGame.jsx";
-import { compareGames, normalize, win, calcScore } from "./utils.jsx";
-import Tips from "./tips.jsx";
+import { compareGames, normalize, win, calcScore, renderResult, hideSecretGame } from "./Utils.jsx";
+import Tips from "./Tips.jsx";
 import ConfirmDialog from "./ConfirmDialog.jsx";
 import InfoIcon from "./assets/info.svg?react"
+import HintIcon from "./assets/hint.svg?react"
 import InfoDialog from "./InfoDialog.jsx";
 import WinDialog from "./WinDialog.jsx";
 import LoseDialog from "./LoseDialog.jsx";
 
 const STORAGE_KEY = "gamehunt_state";
 
-const saveState = (secretGame, enterGames, statusOfGame, difficulty, selectedTips) => {
+const saveState = (secretGame, enterGames, statusOfGame, difficulty, selectedTips, hint, isHintOpen) => {
   try {
     const state = {
       secretGameId: secretGame.id,
       enterGameIds: enterGames.map((entry) => entry.game.id),
       statusOfGame,
       difficulty,
-      selectedTips 
+      selectedTips,
+      hint,
+      isHintOpen
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
   } catch {}
@@ -54,6 +57,9 @@ export default function App() {
   const [difficulty, setDifficulty] = useState('easy') // сложность игры
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
   const [isInfoOpen, setIsInfoOpen] = useState(false)
+  const [isHintOpen, setIsHintOpen] = useState(false)
+  const [hint, setHint] = useState(null)
+  const [isHintConfirmOpen, setIsHintConfirmOpen] = useState(false)
   const [isLoseDialogOpen, setIsLoseDialogOpen] = useState(false)
   const [games, setGames] = useState([]) // все игры из бд
   const [isLoading, setIsLoading] = useState(true) // загрузка игр из бд
@@ -100,6 +106,8 @@ export default function App() {
         setStatusOfGame(saved.statusOfGame ?? null)
         setDifficulty(saved.difficulty ?? 'easy')
         setSelectedTips(saved.selectedTips ?? [])
+        setIsHintOpen(saved.isHintOpen ?? false)
+        setHint(saved.hint ?? null)
       }
     } else { // если нет сохраненного состояние 
       setSecretGame(games[Math.floor(Math.random() * games.length)])
@@ -109,9 +117,9 @@ export default function App() {
 
   useEffect(() => {
     if (secretGame && isRestored) {
-      saveState(secretGame, enterGames, statusOfGame, difficulty, selectedTips)
+      saveState(secretGame, enterGames, statusOfGame, difficulty, selectedTips, hint, isHintOpen)
     }
-  }, [secretGame, enterGames, statusOfGame, difficulty, selectedTips])
+  }, [secretGame, enterGames, statusOfGame, difficulty, selectedTips, hint, isHintOpen])
 
   const isInputBlocked = difficulty === 'medium' && selectedTips.length !== 2
 
@@ -131,7 +139,14 @@ export default function App() {
     setStatusOfGame(null)
     setEnterGames([])
     setSelectedTips([])
-    console.log(secretGame)
+    setHint(null)
+    setIsHintOpen(false)
+    // console.log(secretGame)
+  }
+
+  const handleOpenHint = () => {
+    setHint(hideSecretGame(secretGame.title))
+    setIsHintOpen(true)
   }
 
   const handleDifficulty = (key) => {
@@ -149,19 +164,6 @@ export default function App() {
     if (selectedTips.includes(tipKey)) return
     return setSelectedTips((prev) => [...prev, tipKey])
   }
-
-  const renderResult = (status) => {
-    switch (status) {
-      case "win":
-        return <h5 className="text-center font-bold text-green-600">Победа!</h5>
-      case "retry":
-        return <h5 className="text-center font-bold text-amber-600">Попробуй еще раз!</h5>
-      case "notFound":
-        return <h5 className="text-center font-bold text-red-600">Игра не найдена</h5>
-      default:
-        return null
-    }
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -195,7 +197,6 @@ export default function App() {
       setStatusOfGame("retry")
     }
   };
-
   const inputListGames = isFocused && inputText.trim().length > 0 ? games.filter((game) => { // выпадающий список 
     return normalize(game.title).includes(normalize(inputText)) ||
     (game.aliases ?? []).some((alias) => normalize(alias).includes(normalize(inputText)))
@@ -205,29 +206,24 @@ export default function App() {
     <div className="flex justify-center items-center h-screen text-gray-400">
       Загрузка...
     </div>
-  ) 
-
+  )
   return (    
     <>
-
      <div className="relative flex flex-wrap justify-center gap-3 items-center pt-4 px-4">
         {enterGames.length > 0 && (
           <button
             onClick={() => setIsResetDialogOpen(true)}
-            className="md:absolute md:left-4 cursor-pointer bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition"
-          >
+            className="md:absolute md:left-4 cursor-pointer bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition">
             Сброс игры
           </button>
         )}
-
 
       <div className="flex gap-3">
         {difficulties.map(({ key, label, activeClass, inactiveClass }) => (
           <button
             key={key}
             onClick={() => handleDifficulty(key)}
-            className={`cursor-pointer font-bold py-2 px-4 rounded-lg text-white transition ${difficulty === key ? activeClass : inactiveClass}`}
-          >
+            className={`cursor-pointer font-bold py-2 px-4 rounded-lg text-white transition ${difficulty === key ? activeClass : inactiveClass}`}>
             {label}
           </button>
         ))}
@@ -235,11 +231,9 @@ export default function App() {
       
       <button
         onClick={() => setIsInfoOpen(true)}
-        className="md:absolute md:right-4 cursor-pointer text-gray-400 hover:text-white transition"
-      >
-      <InfoIcon width={32} height={32} />
-    </button>
-
+        className="md:absolute md:right-4 cursor-pointer">
+        <InfoIcon width={32} height={32} />
+      </button>
     </div>
 
     <ConfirmDialog
@@ -265,6 +259,17 @@ export default function App() {
       description="Текущий прогресс не сохранится"
     />
 
+    <ConfirmDialog
+      isOpen={isHintConfirmOpen}
+      onClose={() => setIsHintConfirmOpen(false)}
+      onConfirm={() => {
+        setIsHintConfirmOpen(false)
+        handleOpenHint()
+      }}
+      title="Открыть подсказку?"
+      description="Будет показано зашифрованное название игры"
+    />
+
     <WinDialog 
       isOpen={statusOfGame === 'win'}
       onConfirm={choseGame}
@@ -274,14 +279,14 @@ export default function App() {
     />
 
     <LoseDialog
-    isOpen={isLoseDialogOpen}
-    onConfirm={() => {
-      setIsLoseDialogOpen(false)
-      choseGame()
-    }}
-    enterGames={enterGames}
-    secretGame={secretGame}
-    difficulty={difficulty}
+      isOpen={isLoseDialogOpen}
+      onConfirm={() => {
+        setIsLoseDialogOpen(false)
+        choseGame()
+      }}
+      enterGames={enterGames}
+      secretGame={secretGame}
+      difficulty={difficulty}
     />
       
       <div className="flex flex-col items-center gap-4 mt-10">
@@ -290,33 +295,50 @@ export default function App() {
 
         <form onSubmit={handleSubmit} className="w-full max-w-md mt-6">
           <div className="relative">
-          <input
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            minLength={3}
-            maxLength={40}
-            placeholder="Введите название игры..."
-            className="w-full px-4 py-3 rounded-xl bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            disabled={statusOfGame === "win" || isInputBlocked}
-          />
+            {isHintOpen && hint && (
+              <div className="w-full text-center mb-3 px-2">
+                <p className="text-2xl font-mono font-bold tracking-[0.3em] text-indigo-300">
+                  {hint}
+                </p>
+              </div>
+            )}
+            <div className="flex">
+              <input
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                minLength={3}
+                maxLength={40}
+                placeholder="Введите название игры..."
+                className="w-full px-4 py-3 rounded-xl bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                disabled={statusOfGame === "win" || isInputBlocked}
+              />
+              {enterGames.length > 8 && !isHintOpen &&
+                <button
+                  onClick={() => setIsHintConfirmOpen(true)}
+                  className="ml-2 cursor-pointer">
+                  <HintIcon width={32} height={32}/>
+                </button>
+              }
+              
+            </div>
+            {inputListGames.length > 0 && (
+              <ul className="animate-fadeIn absolute z-100 w-full mt-1 bg-gray-800 border border-gray-700  rounded-xl overflow-hidden">
+              {inputListGames.map((game) => (
+                <li className="px-4 py-2 cursor-pointer hover:bg-gray-700 transition"
+                  key={game.id}
+                  onMouseDown={() => {
+                    setInputText(game.title)
+                    setIsFocused(false)
+                  }}>
+                  {game.title}
+                </li>
+              ))}
+            </ul>
+            )}
+          </div>
 
-          {inputListGames.length > 0 && (
-            <ul className="animate-fadeIn absolute z-100 w-full mt-1 bg-gray-800 border border-gray-700  rounded-xl overflow-hidden">
-            {inputListGames.map((game) => (
-              <li className="px-4 py-2 cursor-pointer hover:bg-gray-700 transition"
-                key={game.id}
-                onMouseDown={() => {
-                  setInputText(game.title)
-                  setIsFocused(false)
-                }}>
-                {game.title}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
           {renderResult(statusOfGame)}
           <button
             type="submit"
