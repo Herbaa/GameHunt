@@ -358,23 +358,25 @@ export default function App() {
       <br /> 
 
       {mostMatchingGame?.game && (
-        <div className="animate-fadeIn mt-5 border-5 border-indigo-500 rounded-xl">
-          <div className="flex flex-col items-center">
-            <h3 className="text-lg font-bold mb-2">Больше всего совпадений:</h3>
-            <h5 className="text-lg font-semibold mt-2">{mostMatchingGame.game.title}</h5>
-            <RenderNewGame game={mostMatchingGame.game} comparison={mostMatchingGame.comparison}/>
-          </div>
-        </div>
-      )}
+  <div className="animate-fadeIn mt-5 bg-gray-800/50 border-5 border-indigo-500 rounded-xl">
+    <div className="flex flex-col items-center pt-4">
+      <span className="text-xs uppercase tracking-wide text-gray-400 mb-1">Больше всего совпадений</span>
+      <h3 className="text-xl font-bold text-white">{mostMatchingGame.game.title}</h3>
+      <div className="w-16 h-1 bg-indigo-500 rounded-full mt-2" />
+    </div>
+    <RenderNewGame game={mostMatchingGame.game} comparison={mostMatchingGame.comparison} />
+  </div>
+)}
 
-      {sortedOtherGames.map((entry) => (
-        <div key={entry.game.id} className="animate-fadeIn mt-5 border-3 border-gray-700 rounded-xl">
-          <div className="flex flex-col items-center">
-            <h5 className="text-lg font-semibold mt-2">{entry.game.title}</h5>
-          <RenderNewGame game={entry.game} comparison={entry.comparison}/>
-        </div>
-        </div>
-      ))}
+{sortedOtherGames.map((entry) => (
+  <div key={entry.game.id} className="animate-fadeIn mt-5 border-3 border-gray-700 rounded-xl">
+    <div className="flex flex-col items-center pt-4">
+      <h3 className="text-lg font-semibold text-gray-300">{entry.game.title}</h3>
+      <div className="w-10 h-1 bg-gray-600 rounded-full mt-2" />
+    </div>
+    <RenderNewGame game={entry.game} comparison={entry.comparison} />
+  </div>
+))}
       <InfoDialog isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} />
     </>
   );

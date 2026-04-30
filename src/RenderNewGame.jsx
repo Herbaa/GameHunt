@@ -5,13 +5,12 @@ export default function RenderNewGame({game, comparison}) {
     const baseClassname = "rounded-xl flex flex-col items-center justify-center text-center"
     const setClassname = (color) => {
       switch (color) {
-        case 'orange': return 'bg-orange-500'
-        case 'green': return 'bg-green-600'
-        default: return 'bg-gray-800'
+        case 'orange': return 'bg-orange-500 border border-orange-400'
+        case 'green': return 'bg-green-600 border border-green-500'
+        default: return 'bg-gray-800 border border-gray-600'
       }
     }
     return <div className="max-w-3xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 m-5 ml-5 mr-5">
-        {/* <div><h3>{secretGame.title}</h3></div> */}
       
       <div className={`${baseClassname} ${setClassname(comparison.year)}`}>
         <span className="p-3 text-lg font-semibold">
