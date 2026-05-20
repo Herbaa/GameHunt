@@ -1,4 +1,4 @@
-import { normalizeSales } from "./Utils"
+import { normalizeSales } from "../utils/utils.js"
 
 export default function RenderNewGame({game, comparison}) {
     // console.log(comparison)

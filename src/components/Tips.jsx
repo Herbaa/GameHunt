@@ -1,4 +1,4 @@
-import { normalizeSales } from "./Utils"
+import {normalizeSales} from '../utils/utils.js'
 
 const tip_keys = ['year', 'genres', 'platforms', 'sales']
 

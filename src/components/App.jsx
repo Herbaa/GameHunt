@@ -1,41 +1,15 @@
-import { useState, useEffect } from "react";
-import { supabase } from "./supabase.js";
+import { useState } from "react";
 import RenderNewGame from "./RenderNewGame.jsx";
-import { compareGames, normalize, win, calcScore, renderResult, hideSecretGame } from "./Utils.jsx";
+import GameStatus from "./GameStatus.jsx";
 import Tips from "./Tips.jsx";
 import ConfirmDialog from "./ConfirmDialog.jsx";
-import InfoIcon from "./assets/info.svg?react"
-import HintIcon from "./assets/hint.svg?react"
+import InfoIcon from "../assets/info.svg?react"
+import HintIcon from "../assets/hint.svg?react"
 import InfoDialog from "./InfoDialog.jsx";
 import WinDialog from "./WinDialog.jsx";
 import LoseDialog from "./LoseDialog.jsx";
-
-const STORAGE_KEY = "gamehunt_state";
-
-const saveState = (secretGame, enterGames, statusOfGame, difficulty, selectedTips, hint, isHintOpen) => {
-  try {
-    const state = {
-      secretGameId: secretGame.id,
-      enterGameIds: enterGames.map((entry) => entry.game.id),
-      statusOfGame,
-      difficulty,
-      selectedTips,
-      hint,
-      isHintOpen
-    }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-  } catch {}
-}
-
-const loadState = () => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    return JSON.parse(raw)
-  } catch {
-    return null
-  }
-};
+import { normalize } from "../utils/utils.js";
+import { useGame } from "../hooks/useGame.js";
 
 const difficulties = [
   { key: 'easy', label: 'Легкая', activeClass: 'bg-green-600 hover:bg-green-700', inactiveClass: 'bg-gray-700 hover:bg-gray-600' },
@@ -43,160 +17,27 @@ const difficulties = [
   { key: 'hard', label: 'Сложная', activeClass: 'bg-red-500 hover:bg-red-600', inactiveClass: 'bg-gray-700 hover:bg-gray-600' },
 ]
 
-const clearState = () => localStorage.removeItem(STORAGE_KEY)
-
 // -------------------------------------------------------------------------------------------------------------------------
 
 export default function App() {
+  const {
+    games, secretGame, enterGames, statusOfGame, difficulty,
+    selectedTips, hint, isHintOpen, chosenDifficulty, isLoading,
+    isRestored, mostMatchingGame, sortedOtherGames,
 
-  // загаданная игра
-  const [secretGame, setSecretGame] = useState(null)
-  const [inputText, setInputText] = useState("") // текст в инпуте
-  const [statusOfGame, setStatusOfGame] = useState(null) // статус игры
-  const [enterGames, setEnterGames] = useState([]) // все введенные игры
-  const [difficulty, setDifficulty] = useState('easy') // сложность игры
-  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
-  const [isInfoOpen, setIsInfoOpen] = useState(false)
-  const [isHintOpen, setIsHintOpen] = useState(false)
-  const [hint, setHint] = useState(null)
+    choseGame, handleSubmit, handleDifficulty, handleSelectTip,
+    handleOpenHint, setChosenDifficulty, setDifficulty
+  } = useGame()
+
   const [isHintConfirmOpen, setIsHintConfirmOpen] = useState(false)
   const [isLoseDialogOpen, setIsLoseDialogOpen] = useState(false)
-  const [games, setGames] = useState([]) // все игры из бд
-  const [isLoading, setIsLoading] = useState(true) // загрузка игр из бд
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false)
+  const [isInfoOpen, setIsInfoOpen] = useState(false)
   const [isFocused, setIsFocused] = useState(false) // фокус на инпуте
-  const [chosenDifficulty, setChosenDifficulty] = useState(null)// сложность, которую хочет выбрать юзер
-
-  const [selectedTips, setSelectedTips] = useState([]) // какие подсказки открыл пользователь (ср уровень)
-
-  useEffect(() => { // загрузка игр из supabase
-    const fetchGames = async () => {
-      const {data, error} = await supabase.from('games').select('*')
-      if (error) {
-        console.error('Ошибка загрузки игр: ', error);
-        return
-      }
-      setGames(data)
-      setIsLoading(false)
-    }
-    fetchGames()
-  }, [])
-
-  const [isRestored, setIsRestored] = useState(false) // восстановлено ли состояние
-  
-  useEffect(() => { // восстановление состояния из localstorage
-    if (games.length === 0 || isRestored) return
-
-    const saved = loadState()
-    if (saved) {
-      const secretGame = games.find((game) => game.id === saved.secretGameId)
-
-      if (secretGame) {
-        setSecretGame(secretGame)
-
-        const enterGames = (saved.enterGameIds ?? []).map((id) => {
-          const game = games.find((gm) => gm.id === id)
-          if (!game) return null
-          const comparison = compareGames(game, secretGame)
-          const score = calcScore(comparison)
-          return {game, comparison, score}
-        })
-        .filter(Boolean)
-
-        setEnterGames(enterGames)
-        setStatusOfGame(saved.statusOfGame ?? null)
-        setDifficulty(saved.difficulty ?? 'easy')
-        setSelectedTips(saved.selectedTips ?? [])
-        setIsHintOpen(saved.isHintOpen ?? false)
-        setHint(saved.hint ?? null)
-      }
-    } else { // если нет сохраненного состояние 
-      setSecretGame(games[Math.floor(Math.random() * games.length)])
-    }
-    setIsRestored(true)
-  }, [games])
-
-  useEffect(() => {
-    if (secretGame && isRestored) {
-      saveState(secretGame, enterGames, statusOfGame, difficulty, selectedTips, hint, isHintOpen)
-    }
-  }, [secretGame, enterGames, statusOfGame, difficulty, selectedTips, hint, isHintOpen])
+  const [inputText, setInputText] = useState("") // текст в инпуте
 
   const isInputBlocked = difficulty === 'medium' && selectedTips.length !== 2
 
-  const mostMatchingGame = enterGames.length > 0
- ? enterGames.reduce((best, entry) => entry.score > best.score ? entry : best)
-  : null // самая совпадающая игра
-
-  // сортировка по убыванию score на странице
-  const sortedOtherGames = enterGames
-    .filter((entry) => entry.game.id !== mostMatchingGame?.game.id)
-    .sort((a, b) => b.score - a.score);
-
-  const choseGame = () => {
-    clearState()
-    setSecretGame(games[Math.floor(Math.random() * games.length)])
-    setInputText("")
-    setStatusOfGame(null)
-    setEnterGames([])
-    setSelectedTips([])
-    setHint(null)
-    setIsHintOpen(false)
-    // console.log(secretGame)
-  }
-
-  const handleOpenHint = () => {
-    setHint(hideSecretGame(secretGame.title))
-    setIsHintOpen(true)
-  }
-
-  const handleDifficulty = (key) => {
-    if (key === difficulty) return
-    if (enterGames.length > 0) {
-      setChosenDifficulty(key)
-    } else {
-      setDifficulty(key)
-      choseGame()
-    }
-  }
-
-  const handleSelectTip = (tipKey) => {
-    if(selectedTips.length === 2) return
-    if (selectedTips.includes(tipKey)) return
-    return setSelectedTips((prev) => [...prev, tipKey])
-  }
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const isExist = games.find((game) => {
-      return normalize(game.title) === normalize(inputText) ||
-      (game.aliases ?? []).some((alias) => normalize(alias) === normalize(inputText))
-    })
-      
-    if (!isExist) {
-      setStatusOfGame('notFound')
-      return
-    }
-    const isSecretGame = normalize(secretGame.title) === normalize(inputText) ||
-      (secretGame.aliases ?? []).some((alias) => normalize(alias) === normalize(inputText))
-    
-    if (isSecretGame) {
-      win()
-      const comparison = compareGames(isExist, secretGame)
-      const score = calcScore(comparison)
-      setEnterGames((prev) => [...prev, {game: isExist, comparison, score}])
-      setInputText("")
-      setStatusOfGame("win")
-    } else {
-      const alreadyEntered = enterGames.find((entry) => entry.game.id === isExist.id)
-      if (!alreadyEntered) {
-        const comparison = compareGames(isExist, secretGame)
-        const score = calcScore(comparison)
-        setEnterGames((prev) => [...prev, {game: isExist, comparison, score}])
-      }
-      setInputText("")
-      setStatusOfGame("retry")
-    }
-  };
   const inputListGames = isFocused && inputText.trim().length > 0 ? games.filter((game) => { // выпадающий список 
     return normalize(game.title).includes(normalize(inputText)) ||
     (game.aliases ?? []).some((alias) => normalize(alias).includes(normalize(inputText)))
@@ -232,7 +73,7 @@ export default function App() {
       <button
         onClick={() => setIsInfoOpen(true)}
         className="md:absolute md:right-4 cursor-pointer">
-        <InfoIcon width={32} height={32} />
+        <InfoIcon width={28} height={28} />
       </button>
     </div>
 
@@ -293,7 +134,7 @@ export default function App() {
         <h1 className="text-4xl font-bold text-indigo-400">GameHunt</h1>
         <p className="text-gray-300 text-center">Попробуй угадать игру по подсказкам ниже!</p>
 
-        <form onSubmit={handleSubmit} className="w-full max-w-md mt-6">
+        <form onSubmit={(e) => handleSubmit(e, inputText, setInputText)} className="w-full max-w-md mt-6">
           <div className="relative">
             {isHintOpen && hint && (
               <div className="w-full text-center mb-3 px-2">
@@ -338,8 +179,7 @@ export default function App() {
             </ul>
             )}
           </div>
-
-          {renderResult(statusOfGame)}
+          <GameStatus status={statusOfGame} />
           <button
             type="submit"
             className="cursor-pointer mt-4 w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 rounded-xl transition"
