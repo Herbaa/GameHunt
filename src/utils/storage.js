@@ -1,13 +1,15 @@
 const STORAGE_KEY = 'gamehunt_state'
 
-export const saveState = (secretGame, enterGames, statusOfGame, difficulty, selectedTips) => {
+export const saveState = (secretGame, enterGames, statusOfGame, difficulty, selectedTips, hint, isHintOpen) => {
   try {
     const state = {
       secretGameId: secretGame.id,
       enterGameIds: enterGames.map((entry) => entry.game.id),
       statusOfGame,
       difficulty,
-      selectedTips
+      selectedTips,
+      hint,
+      isHintOpen
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
   } catch (e) {
