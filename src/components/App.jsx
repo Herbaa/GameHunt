@@ -167,13 +167,14 @@ export default function App() {
             {inputListGames.length > 0 && (
               <ul className="animate-fadeIn absolute z-100 w-full mt-1 bg-gray-800 border border-gray-700  rounded-xl overflow-hidden">
               {inputListGames.map((game) => (
-                <li className="px-4 py-2 cursor-pointer hover:bg-gray-700 transition"
+                <li className="px-4 py-2 flex justify-between cursor-pointer hover:bg-gray-700 transition"
                   key={game.id}
                   onMouseDown={() => {
                     setInputText(game.title)
                     setIsFocused(false)
                   }}>
-                  {game.title}
+                  <span>{game.title}</span>
+                  {enterGames.find((gm) => gm.game.title === game.title) && <span>✅</span>}
                 </li>
               ))}
             </ul>
